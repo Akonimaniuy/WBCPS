@@ -1,0 +1,7 @@
+{
+    "name": "wbcps/project",
+    "description": "Web-Based Career Pathway System",
+    "require": {
+        "phpoffice/phpspreadsheet": "^1.29"
+    }
+}

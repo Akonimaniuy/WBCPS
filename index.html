@@ -1,0 +1,228 @@
+<?php
+session_start();
+
+// Redirect if not logged in
+if(!isset($_SESSION['student_id'])){
+    header("Location: login.php");
+    exit();
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - Career Pathway</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: url('images/bgindex.png') no-repeat center;
+      color: white;
+      overflow-x: hidden;
+    }
+
+    /* Navbar */
+    header {
+      display: flex;
+      background: rgb(20 18 18);
+      position: fixed;
+      width: 100%;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      font-size: 27px;
+      font-weight: bold;
+      font-family: cursive;
+      margin-left: 35px;
+    }
+    header nav a {
+      color: white;
+      margin: 0 15px;
+      text-decoration: none;
+      font-size: 18px;
+    }
+
+    /* Content */
+    .container {
+      padding: 7px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    }
+    .container h2 {
+      font-size: 48px;
+      font-weight: bold;
+      margin-right: 42px;
+      margin-top: 16%;
+    }
+    .container p {
+      max-width: 500px;
+      line-height: 1.5;
+      margin-top: 15px;
+    }
+
+    /* Carousel wrapper */
+    .carousel-wrapper {
+    margin-top: 60px;
+    display: flex
+;
+    align-items: center;
+    position: relative;
+    justify-content: end;
+}
+
+    /* Carousel track */
+    .carousel {
+      display: flex;
+    transition: transform 0.5s ease-in-out;
+    width: 100%;
+    max-width: 1000px;
+    overflow: hidden;
+  margin-top: 10%;
+    }
+
+    .card {
+      min-width: 300px;
+      max-width: 300px;
+      background: white;
+      color: black;
+      border-radius: 15px;
+      margin: 0 15px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+      flex-shrink: 0;
+      overflow: hidden;
+      text-align: center;
+      transition: transform 0.3s;
+    }
+
+    .card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+
+    .card h3 {
+      margin: 15px 0 5px;
+    }
+
+    .card p {
+      font-size: 14px;
+      padding: 0 15px;
+      color: #444;
+      min-height: 60px;
+    }
+
+    .card a {
+      display: inline-block;
+      margin: 15px 0 20px;
+      padding: 10px 20px;
+      background: #166534;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    /* Arrows */
+    .arrow {
+    position: absolute;
+    top: 58%;
+    transform: translateY(-50%);
+    background: #a3ad1b;
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    z-index: 5;
+}
+
+    .arrow.left {
+      left: -50px;
+    }
+    .arrow.right {
+      right: -50px;
+    }
+
+    .arrow:hover {
+      background: #0b3d1b;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Career Pathway</h1>
+  <nav class="nav">
+    <a href="home.html">Home</a>
+    <a href="career-pathway.html">Pathway</a>
+    <a href="assestment.html">Assestment</a>
+    <a href="logout.php">Logout</a>
+  </nav>
+</header>
+
+<div class="container">
+  <h2>EXPLORE<br>PATHWAYS</h2>
+  <div class="carousel-wrapper">
+    <button class="arrow left">&#10094;</button>
+    <div class="carousel" id="carousel">
+      <!-- Card 1 -->
+      <div class="card">
+        <img src="images/agri.jpg" alt="Agriculture">
+        <h3>Agriculture</h3>
+        <p>The science of growing crops and raising animals for food and resources.</p>
+        <a href="#">Read more</a>
+      </div>
+      <!-- Card 2 -->
+      <div class="card">
+        <img src="images/cookery.jpg" alt="Cookery">
+        <h3>Cookery</h3>
+        <p>The art of preparing, cooking, and presenting food for culinary careers.</p>
+        <a href="#">Read more</a>
+      </div>
+      <!-- Card 3 -->
+      <div class="card">
+        <img src="images/ict.jpg" alt="ICT">
+        <h3>ICT</h3>
+        <p>Focuses on technology, networks, and digital communication for IT fields.</p>
+        <a href="#">Read more</a>
+      </div>
+      <!-- Card 4 -->
+      <div class="card">
+        <img src="images/smaw.jpg" alt="Welding">
+        <h3>SMAW (Welding)</h3>
+        <p>Joining metals using an electric arc, vital in construction and repair work.</p>
+        <a href="#">Read more</a>
+      </div>
+      <!-- Card 5 -->
+      <div class="card">
+        <img src="images/electrical.jpg" alt="Electrical">
+        <h3>Electrical</h3>
+        <p>The study of electricity and power systems, preparing for technical careers.</p>
+        <a href="#">Read more</a>
+      </div>
+    </div>
+    <button class="arrow right">&#10095;</button>
+  </div>
+</div>
+
+<script>
+  const carousel = document.getElementById('carousel');
+  const prevBtn = document.querySelector('.arrow.left');
+  const nextBtn = document.querySelector('.arrow.right');
+  let scrollAmount = 0;
+
+  prevBtn.addEventListener('click', () => {
+    carousel.scrollBy({left: -320, behavior: 'smooth'});
+  });
+
+  nextBtn.addEventListener('click', () => {
+    carousel.scrollBy({left: 320, behavior: 'smooth'});
+  });
+</script>
+
+</body>
+</html>
