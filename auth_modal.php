@@ -47,6 +47,11 @@ unset($_SESSION['auth_message'], $_SESSION['auth_message_type'], $_SESSION['auth
                 <label class="block text-sm font-medium text-gray-700">Password</label>
                 <input type="password" name="login_password" class="form-input" placeholder="••••••••" required>
             </div>
+            <div class="text-right text-sm">
+                <button type="button" id="openForgotPasswordModal" class="font-medium text-yellow-600 hover:text-yellow-500">
+                    Forgot Password?
+                </button>
+            </div>
             <button type="submit" class="w-full bg-yellow-400 text-gray-900 px-4 py-3 font-bold rounded-lg hover:bg-yellow-500 shadow-md">Login</button>
         </form>
 
@@ -78,7 +83,8 @@ unset($_SESSION['auth_message'], $_SESSION['auth_message_type'], $_SESSION['auth
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         const authModal = document.getElementById('authModal');
-        const openAuthModalBtn = document.getElementById('openAuthModalBtn');
+        const openAuthModalBtns = document.querySelectorAll('.openAuthModalBtn');
+        const openForgotPasswordModalBtn = document.getElementById('openForgotPasswordModal');
         const closeAuthModalBtn = document.getElementById('closeAuthModal');
 
         const loginTab = document.getElementById('loginTab');
@@ -103,16 +109,23 @@ unset($_SESSION['auth_message'], $_SESSION['auth_message_type'], $_SESSION['auth
         loginTab.addEventListener('click', showLogin);
         registerTab.addEventListener('click', showRegister);
 
-        if (openAuthModalBtn) {
-            openAuthModalBtn.addEventListener('click', (e) => {
+        openAuthModalBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 authModal.classList.remove('hidden');
             });
-        }
+        });
 
         if (closeAuthModalBtn) {
             closeAuthModalBtn.addEventListener('click', () => {
                 authModal.classList.add('hidden');
+            });
+        }
+
+        if (openForgotPasswordModalBtn) {
+            openForgotPasswordModalBtn.addEventListener('click', () => {
+                authModal.classList.add('hidden');
+                document.getElementById('forgotPasswordModal').classList.remove('hidden');
             });
         }
 

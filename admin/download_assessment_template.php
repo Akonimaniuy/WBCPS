@@ -24,11 +24,11 @@ $questionsSheet = $spreadsheet->getActiveSheet();
 $questionsSheet->setTitle('Questions');
 
 // Set headers
-$headers = ['major_id', 'question', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer'];
+$headers = ['major_id', 'question', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'question_type', 'difficulty_level'];
 $questionsSheet->fromArray($headers, NULL, 'A1');
 
 // Style headers
-$headerStyle = $questionsSheet->getStyle('A1:G1');
+$headerStyle = $questionsSheet->getStyle('A1:I1');
 $headerStyle->getFont()->setBold(true);
 $headerStyle->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFD3D3D3');
 
@@ -40,23 +40,29 @@ $exampleData = [
     'Option B answer', 
     'Option C answer', 
     'Option D answer', 
-    'a'
+    'a',
+    'Skills',
+    1
 ];
 $questionsSheet->fromArray($exampleData, NULL, 'A2');
 
 // Add instructions/notes
-$questionsSheet->setCellValue('I1', 'Instructions');
-$questionsSheet->getStyle('I1')->getFont()->setBold(true);
-$questionsSheet->setCellValue('I2', "1. For 'major_id', please select an option from the dropdown list.");
-$questionsSheet->setCellValue('I3', "2. 'correct_answer' must be 'a', 'b', 'c', or 'd'.");
-$questionsSheet->mergeCells('I2:L2');
-$questionsSheet->mergeCells('I3:L3');
+$questionsSheet->setCellValue('K1', 'Instructions');
+$questionsSheet->getStyle('K1')->getFont()->setBold(true);
+$questionsSheet->setCellValue('K2', "1. For 'major_id', please select an option from the dropdown list.");
+$questionsSheet->setCellValue('K3', "2. 'correct_answer' must be 'a', 'b', 'c', or 'd'.");
+$questionsSheet->setCellValue('K4', "3. 'question_type' must be 'Interest', 'Skills', or 'Strengths'.");
+$questionsSheet->setCellValue('K5', "4. 'difficulty_level' should be a number (e.g., 1, 2, 3).");
+$questionsSheet->mergeCells('K2:N2');
+$questionsSheet->mergeCells('K3:N3');
+$questionsSheet->mergeCells('K4:N4');
+$questionsSheet->mergeCells('K5:N5');
 
 // Auto-size columns
-foreach (range('A', 'G') as $col) {
+foreach (range('A', 'I') as $col) {
     $questionsSheet->getColumnDimension($col)->setAutoSize(true);
 }
-$questionsSheet->getColumnDimension('I')->setAutoSize(true);
+$questionsSheet->getColumnDimension('K')->setAutoSize(true);
 
 
 // --- Create the "Majors List" worksheet ---
@@ -110,6 +116,17 @@ if ($rowIndex > 2) { // Only add validation if there are majors
         $validation->setError('Please select a valid Major from the list.');
         // Point the validation to the new combined column 'D'
         $validation->setFormula1("'Majors List'!\$D\$2:\$D\${$lastMajorRow}");
+
+        // Data validation for question_type
+        $validationType = $questionsSheet->getCell('H' . $i)->getDataValidation();
+        $validationType->setType(DataValidation::TYPE_LIST);
+        $validationType->setErrorStyle(DataValidation::STYLE_STOP);
+        $validationType->setAllowBlank(false);
+        $validationType->setShowDropDown(true);
+        $validationType->setErrorTitle('Invalid Type');
+        $validationType->setError("Please select 'Interest', 'Skills', or 'Strengths'.");
+        $validationType->setFormula1('"Interest,Skills,Strengths"');
+
     }
     // Hide the helper column to keep the sheet clean
     $majorsSheet->getColumnDimension('D')->setVisible(false);

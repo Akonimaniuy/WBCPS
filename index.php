@@ -1,69 +1,42 @@
 <?php
 session_start();
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Career Pathway</title>
-    <link rel="stylesheet" type="text/css" href="css/style.css">
-    <script src="https://cdn.tailwindcss.com"></script> <!-- Keep for header styles -->
-</head>
-<body>
+require 'admin/lib/config.php';
 
-<?php include 'header.php'; ?>
+// Simple Router
+$route = $_GET['route'] ?? '';
 
-<!-- Hero Section -->
-<div class="hero">
-    <h1>Your Future, Unlocked.</h1>
+// Define routes and their corresponding files
+$routes = [
+    '' => 'home.php',
+    'dashboard' => 'dashboard.php',
+    'login' => 'login.php',
+    'logout' => 'logout.php',
+    'pathways' => 'pathways.php',
+    'assessment' => 'assessment.php',
+    'results' => 'results.php',
+    'retake-assessment' => 'retake_assessment.php',
+];
 
-    <div class="carousel" mask>
-        <article>
-            <img src="images/agri.jpg" alt="Agriculture">
-            <h2>Agriculture</h2>
-            <div>
-                <p>Agriculture is the science and practice of cultivating crops and raising animals to produce food, fiber, and other resources. Careers in this field include farming, livestock management, agribusiness, and sustainable food production.</p>
-                <a href="pathways.php">Explore</a>
-            </div>
-        </article>
-        <article>
-            <img src="images/cookery.jpg" alt="Cookery">
-            <h2>Cookery</h2>
-            <div>
-                <p>Cookery is the art and practice of preparing, cooking, and presenting food. It involves mastering culinary techniques, ensuring food safety, and creating meals that are both nutritious and appealing.</p>
-                <a href="pathways.php">Explore</a>
-            </div>
-        </article>
-        <article>
-            <img src="images/ict.jpg" alt="ICT">
-            <h2>ICT</h2>
-            <div>
-                <p>ICT focuses on the use of technology to manage, process, and share information. It covers computer systems, networks, software, and digital communication tools that are essential in today’s industries.</p>
-                <a href="pathways.php">Explore</a>
-            </div>
-        </article>
-        <article>
-            <img src="images/electrical.jpg" alt="Electrical">
-            <h2>Electrical</h2>
-            <div>
-                <p>Electrical focuses on the study and application of electricity, electronics, and power systems. It involves installing, maintaining, and repairing electrical wiring, equipment, and machinery.</p>
-                <a href="pathways.php">Explore</a>
-            </div>
-        </article>
-        <article>
-            <img src="images/smaw.jpg" alt="SMAW">
-            <h2>SMAW</h2>
-            <div>
-                <p>SMAW (Welding) involves joining metals using an electric arc and coated electrodes. It is widely used in construction, manufacturing, and repair industries for building and maintaining metal structures.</p>
-                <a href="pathways.php">Explore</a>
-            </div>
-        </article>
-    </div>
+// Dynamic route for pathway details, e.g., /pathway/12
+if (preg_match('#^pathway/(\d+)$#', $route, $matches)) {
+    $_GET['id'] = $matches[1]; // Make the ID available to the included file
+    $file_to_include = 'pathway_details.php';
+} elseif (isset($routes[$route])) {
+    $file_to_include = $routes[$route];
+} else {
+    // Handle 404 Not Found
+    http_response_code(404);
+    $file_to_include = '404.php'; // You can create a 404.php for a nice error page
+}
 
-
-</div>
-
-<?php include 'auth_modal.php'; ?>
-</body>
-</html>
+if (file_exists($file_to_include)) {
+    // The logic for pathway links needs to be available for multiple pages
+    // We need to check if the file exists before requiring it.
+    if (file_exists('pathways_logic.php') && in_array($file_to_include, ['home.php', 'pathways.php', 'pathway_details.php'])) {
+        require 'pathways_logic.php';
+    }
+    include $file_to_include;
+} else {
+    // Fallback for missing files
+    echo "Error: The requested page could not be found.";
+}
