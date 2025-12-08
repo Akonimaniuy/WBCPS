@@ -151,14 +151,25 @@ while($row = $result->fetch_assoc()) {
             <?php endif; ?>
 
             <form action="/WBCPS/assessment" method="POST">
+                <!-- Category Filter Dropdown -->
+                <div class="mb-8">
+                    <label for="categoryFilter" class="block text-sm font-medium text-gray-700 mb-2">Filter by Category</label>
+                    <select id="categoryFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm rounded-md shadow-sm">
+                        <option value="all">Show All</option>
+                        <?php foreach ($categories_with_majors as $category_name => $majors): ?>
+                            <option value="<?php echo $majors[0]['category_id']; ?>"><?php echo htmlspecialchars($category_name); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
                 <?php foreach ($categories_with_majors as $category_name => $majors): ?>
-                    <div class="mb-8">
+                    <div class="category-majors mb-8" data-category-id="<?php echo $majors[0]['category_id']; ?>">
                         <h3 class="text-2xl font-semibold text-gray-700 border-b-2 border-yellow-400 pb-2 mb-4"><?php echo htmlspecialchars($category_name); ?></h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <?php foreach ($majors as $major): ?>
                                 <div>
                                     <input type="checkbox" name="major_ids[]" value="<?php echo $major['major_id']; ?>" id="major_<?php echo $major['major_id']; ?>" class="major-checkbox hidden">
-                                    <label for="major_<?php echo $major['major_id']; ?>" class="block p-4 border-2 rounded-lg cursor-pointer hover:border-yellow-500 transition-colors">
+                                    <label for="major_<?php echo $major['major_id']; ?>" class="block p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-yellow-500 transition-colors">
                                         <span class="font-bold text-lg text-gray-800"><?php echo htmlspecialchars($major['major']); ?></span>
                                     </label>
                                 </div>
@@ -166,7 +177,6 @@ while($row = $result->fetch_assoc()) {
                         </div>
                     </div>
                 <?php endforeach; ?>
-
                 <div class="text-center mt-8">
                     <button type="submit" name="start_assessment" class="bg-yellow-400 text-gray-900 px-12 py-4 font-bold rounded-full hover:bg-yellow-500 transition-colors shadow-lg text-lg">
                         Start Assessment
@@ -273,6 +283,35 @@ while($row = $result->fetch_assoc()) {
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const assessmentContainer = document.getElementById('assessmentContainer');
+
+    // --- Major Selection Filtering ---
+    const categoryFilter = document.getElementById('categoryFilter');
+    const majorGroups = document.querySelectorAll('.category-majors');
+
+    if (categoryFilter) {
+        const showMajorsForCategory = (categoryId) => {
+            majorGroups.forEach(group => {
+                if (categoryId === 'all' || group.dataset.categoryId === categoryId) {
+                    group.style.display = 'block';
+                } else {
+                    group.style.display = 'none';
+                }
+            });
+        };
+
+        categoryFilter.addEventListener('change', (e) => {
+            showMajorsForCategory(e.target.value);
+        });
+
+        // Initially show the first category's majors, or all if there's only one category.
+        if (majorGroups.length > 0) {
+            const firstCategoryId = majorGroups[0].dataset.categoryId;
+            categoryFilter.value = firstCategoryId;
+            showMajorsForCategory(firstCategoryId);
+        }
+    }
+    // --- End Major Selection ---
+
     if (!assessmentContainer) return;
 
     const nextBtn = document.getElementById('nextBtn');

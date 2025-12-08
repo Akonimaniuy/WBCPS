@@ -46,6 +46,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port       = 587; // Port for TLS
 
+            // The following block is a workaround for local development SSL certificate issues.
+            // It should NOT be used in a production environment.
+            $mail->SMTPOptions = array(
+                'ssl' => array(
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true
+                )
+            );
+
             //Recipients
             $mail->setFrom('no-reply@wbcps.com', 'WBCPS');
             $mail->addAddress($email);
