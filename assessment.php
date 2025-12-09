@@ -19,42 +19,74 @@ $initial_question = null;
 // --- Handle Major Selection ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['start_assessment'])) {
     if (isset($_POST['major_ids']) && count($_POST['major_ids']) >= 2) {
-        $selected_majors = array_map('intval', $_POST['major_ids']);
-        $_SESSION['assessment_majors'] = $selected_majors;
+        $posted_major_ids = array_map('intval', $_POST['major_ids']);
+        
+        $valid_majors = [];
+        $invalid_majors_names = [];
+
+        // Prepare a statement to check for questions for each major
+        $stmt_check = $conn->prepare("SELECT m.major, (SELECT COUNT(*) FROM assessments WHERE major_id = m.id) as question_count FROM majors m WHERE m.id = ?");
+
+        foreach ($posted_major_ids as $major_id) {
+            $stmt_check->bind_param("i", $major_id);
+            $stmt_check->execute();
+            $result = $stmt_check->get_result()->fetch_assoc();
+
+            if ($result && $result['question_count'] > 0) {
+                $valid_majors[] = $major_id;
+            } else {
+                $invalid_majors_names[] = $result['major'] ?? "Major ID #$major_id";
+            }
+        }
+        $stmt_check->close();
+
+        // Check if there are enough valid majors to proceed
+        if (count($valid_majors) < 2) {
+            $message = "The selected majors do not have enough questions to start an assessment. Please select at least two different, valid majors.";
+            $selected_majors = null; // Prevent assessment from starting
+        } else {
+            $selected_majors = $valid_majors;
+            $_SESSION['assessment_majors'] = $selected_majors;
 
         // --- Initialize Adaptive Assessment State ---
         $scores = [];
         $difficulty_levels = [];
         $consecutive_wrong_answers = [];
         foreach ($selected_majors as $major_id) {
-            $scores[$major_id] = [
-                'total' => 0,
-                'Interest' => 0,
-                'Skills' => 0,
-                'Strengths' => 0
+                $scores[$major_id] = [
+                    'total' => 0,
+                    'Interest' => 0,
+                    'Skills' => 0,
+                    'Strengths' => 0
+                ];
+                $difficulty_levels[$major_id] = 2; // Start at medium difficulty
+                $consecutive_wrong_answers[$major_id] = 0;
+            }
+
+            $_SESSION['adaptive_assessment_state'] = [
+                'selected_majors' => $selected_majors,
+                'scores' => $scores,
+                'difficulty_levels' => $difficulty_levels,
+                'consecutive_wrong_answers' => $consecutive_wrong_answers,
+                'answered_questions' => [0], // Start with a dummy value to prevent SQL errors
+                'current_major_index' => -1, // Will be incremented to 0 on first question
+                'questions_answered' => 0,
+                'total_questions_to_ask' => 100 // Define how many total questions to ask
             ];
-            $difficulty_levels[$major_id] = 2; // Start at medium difficulty
-            $consecutive_wrong_answers[$major_id] = 0;
+            // Initialize leave attempts counter
+            $_SESSION['adaptive_assessment_state']['leave_attempts'] = 0;
+
+            // Set a flag to show the warning modal on the next page load
+            $_SESSION['show_assessment_warning'] = true;
+
+            // If some majors were invalid, store their names to show a notification
+            if (!empty($invalid_majors_names)) {
+                $_SESSION['invalid_majors_notice'] = "The following majors were excluded as they have no questions available: " . implode(', ', $invalid_majors_names);
+            }
+
+            header("Location: /WBCPS/assessment");
+            exit();
         }
-
-        $_SESSION['adaptive_assessment_state'] = [
-            'selected_majors' => $selected_majors,
-            'scores' => $scores,
-            'difficulty_levels' => $difficulty_levels,
-            'consecutive_wrong_answers' => $consecutive_wrong_answers,
-            'answered_questions' => [0], // Start with a dummy value to prevent SQL errors
-            'current_major_index' => -1, // Will be incremented to 0 on first question
-            'questions_answered' => 0,
-            'total_questions_to_ask' => 100 // Define how many total questions to ask
-        ];
-        // Initialize leave attempts counter
-        $_SESSION['adaptive_assessment_state']['leave_attempts'] = 0;
-
-        // Set a flag to show the warning modal on the next page load
-        $_SESSION['show_assessment_warning'] = true;
-
-        header("Location: /WBCPS/assessment");
-        exit();
     } else {
         $message = "Please select at least two majors to begin the assessment.";
     }
@@ -251,6 +283,23 @@ while($row = $result->fetch_assoc()) {
 <?php unset($_SESSION['show_assessment_warning']); // Unset the flag so it doesn't show again on refresh ?>
 <?php endif; ?>
 
+<!-- Invalid Majors Notice Modal -->
+<?php if (isset($_SESSION['invalid_majors_notice'])): ?>
+<div id="invalidMajorsModal" class="modal active fixed inset-0 bg-gray-600 bg-opacity-75 items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md text-center p-8">
+        <svg class="mx-auto mb-4 text-blue-500 w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <h3 class="text-2xl font-bold text-gray-800 mb-2">Notice</h3>
+        <p class="text-gray-600 mb-6">
+            <?php echo htmlspecialchars($_SESSION['invalid_majors_notice']); ?>
+        </p>
+        <button id="closeInvalidMajorsBtn" class="bg-yellow-400 text-gray-900 px-8 py-3 font-bold rounded-full hover:bg-yellow-500 transition-colors">
+            OK
+        </button>
+    </div>
+</div>
+<?php unset($_SESSION['invalid_majors_notice']); ?>
+<?php endif; ?>
+
 <!-- Leave Warning Modal -->
 <div id="leaveWarningModal" class="modal fixed inset-0 bg-gray-600 bg-opacity-75 items-center justify-center z-50 p-4">
     <div class="bg-white rounded-lg shadow-xl w-full max-w-md text-center p-8">
@@ -327,6 +376,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeAlertModalBtn = document.getElementById('closeAlertModalBtn');
     const startWarningModal = document.getElementById('startWarningModal');
     const continueToAssessmentBtn = document.getElementById('continueToAssessmentBtn');
+    const invalidMajorsModal = document.getElementById('invalidMajorsModal');
+    const closeInvalidMajorsBtn = document.getElementById('closeInvalidMajorsBtn');
 
     const handleVisibilityChange = () => {
         if (document.visibilityState === 'hidden') {
@@ -447,6 +498,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (closeAlertModalBtn) {
         closeAlertModalBtn.addEventListener('click', () => {
             alertModal.classList.remove('active');
+        });
+    }
+
+    if (closeInvalidMajorsBtn) {
+        closeInvalidMajorsBtn.addEventListener('click', () => {
+            invalidMajorsModal.classList.remove('active');
         });
     }
 
